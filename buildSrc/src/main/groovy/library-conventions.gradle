@@ -1,0 +1,43 @@
+// Add plugins for libraries
+plugins {
+    id 'java-conventions'
+    id 'java-library'
+    id 'maven-publish'
+}
+
+// Set global publication data
+publishing {
+    publications.withType(MavenPublication).all {
+        afterEvaluate {
+            artifactId = archivesBaseName
+        }
+        pom {
+            def baseUrl = "$project.generalGithub$project.projectBaseName"
+            url = "https://$baseUrl"
+            organization {
+                name = project.generalAuthor
+                url = project.generalWebsite
+            }
+            scm {
+                url = "https://$baseUrl"
+                connection = "scm:git:git://${baseUrl}.git"
+                developerConnection = "scm:git:git@${baseUrl}.git"
+            }
+            issueManagement {
+                system = 'Github Issues'
+                url = "https://$baseUrl/issues"
+            }
+            licenses {
+                license {
+                    name = project.licenseName
+                    url = project.licenseUrl
+                }
+            }
+        }
+        repositories {
+            maven {
+                url project.repoLocal
+            }
+        }
+    }
+}

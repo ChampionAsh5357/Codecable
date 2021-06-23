@@ -1,0 +1,46 @@
+// Setup plugins
+plugins {
+    id 'library-conventions'
+    id 'net.minecraftforge.gradle' version '5.+'
+    id 'com.github.johnrengelman.shadow' version 'latest.release'
+}
+
+// Set project information
+classifier.id = project.projectForge
+classifier.implVersion = "$project.minecraftVersion-$project.projectVersion"
+
+// Set forge information
+minecraft {
+    mappings channel: project.forgeMappingChannel, version: project.forgeMappingVersion
+
+    runs {
+        client {
+
+        }
+    }
+}
+
+// Add dependencies on previous projects and forge
+dependencies {
+    minecraft group: 'net.minecraftforge', name: 'forge', version: "$project.forgeMinecraftVersion-$project.forgeVersion"
+    //TODO: Add dependency on minecraft project (needs 1.17)
+}
+
+// Reobfuscate to srg mapping set
+jar {
+    manifest.attributes([
+            'FMLModType': 'LIBRARY'
+    ])
+    finalizedBy 'reobfJar'
+}
+
+// Set specific publication data
+publishing {
+    publications.create(archivesBaseName, MavenPublication) {
+        artifact shadowJar
+        pom {
+            name = "$project.projectName - ${project.projectForge.capitalize()}"
+            description = "A collection of helpful codecs for use with MinecraftForge."
+        }
+    }
+}

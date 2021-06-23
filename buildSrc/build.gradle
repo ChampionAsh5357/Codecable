@@ -1,0 +1,9 @@
+// Add gradle plugin to build shared data
+plugins {
+    id 'groovy-gradle-plugin'
+}
+
+// Add repositories needed to grab plugins
+repositories {
+    gradlePluginPortal()
+}

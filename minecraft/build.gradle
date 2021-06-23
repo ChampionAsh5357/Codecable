@@ -1,0 +1,116 @@
+// Setup plugins
+plugins {
+    id 'library-conventions'
+    id 'org.spongepowered.gradle.vanilla' version 'latest.release'
+    id 'com.github.johnrengelman.shadow' version 'latest.release'
+}
+
+// Set project information
+classifier.id = project.projectMinecraft
+classifier.implVersion = project.projectVersion
+
+// Set minecraft data
+minecraft {
+    version project.minecraftVersion
+    runs {
+        client('runVanillaClient') {}
+        server('runVanillaServer') {}
+    }
+}
+
+// Add necessary repositories
+repositories {
+    maven {
+        name 'Ashwork'
+        url 'https://maven.ashwork.net'
+    }
+}
+
+// Add shading
+configurations {
+    shade
+}
+
+// Add dependencies on previous projects
+dependencies {
+    shade api(project(':core')) {
+        exclude group: 'com.mojang'
+    }
+    testImplementation project(':core').sourceSets.test.output
+}
+
+// Copy sources for shading
+task copySources(dependsOn: javadoc) {
+    inputs.files configurations.shade
+    outputs.dir "$project.buildDir/downloads"
+    doLast {
+        def componentIds = configurations.shade.incoming.resolutionResult.allDependencies.collect { it.selected.id }
+        ArtifactResolutionResult result = dependencies.createArtifactResolutionQuery()
+            .forComponents(componentIds)
+            .withArtifacts(JvmLibrary, SourcesArtifact)
+            .execute()
+        def sourceArtifacts = []
+        result.resolvedComponents.each { ComponentArtifactsResult component ->
+            Set<ArtifactResult> sources = component.getArtifacts(SourcesArtifact)
+            sources.each { ArtifactResult ar ->
+                if (ar instanceof ResolvedArtifactResult) {
+                    if (ar.file.isDirectory()) {
+                        sourceArtifacts << ar.file
+                    } else {
+                        sourceArtifacts << zipTree(ar.file)
+                    }
+                }
+            }
+        }
+
+        copy {
+            from project(':core').sourceSets.main.allJava
+            from(sourceArtifacts) {
+                exclude '**/META-INF/**'
+            }
+            into "$project.buildDir/downloads/sources"
+        }
+    }
+}
+
+
+// Create shadowed sources
+task shadowSourcesJar(type: Jar, dependsOn: copySources) {
+    archiveClassifier = 'sources'
+    from sourceSets.main.allJava, "$project.buildDir/downloads/sources"
+}
+
+task shadowJavadoc(type: Javadoc, dependsOn: copySources) {
+    source sourceSets.main.allJava, "$project.buildDir/downloads/sources"
+    classpath = files sourceSets.main.compileClasspath
+    destinationDir file("$project.buildDir/docs/javadoc")
+}
+
+// Create shadowed javadocs
+task shadowJavadocJar(type: Jar, dependsOn: shadowJavadoc) {
+    archiveClassifier = 'javadoc'
+    from shadowJavadoc.destinationDir
+}
+
+// Add shadow jar
+shadowJar {
+    archiveClassifier = jar.archiveClassifier
+    configurations = [project.configurations.shade]
+
+    finalizedBy copySources
+    finalizedBy shadowSourcesJar
+    finalizedBy shadowJavadocJar
+}
+
+// Set specific publication data
+publishing {
+    publications.create(archivesBaseName, MavenPublication) {
+        artifact shadowJar
+        artifact shadowSourcesJar
+        artifact shadowJavadocJar
+        pom {
+            name = "$project.projectName - ${project.projectMinecraft.capitalize()}"
+            description = "A collection of helpful codecs for use with Minecraft."
+        }
+    }
+}

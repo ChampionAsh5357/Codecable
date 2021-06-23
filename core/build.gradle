@@ -1,0 +1,38 @@
+// Setup Library
+plugins {
+    id 'library-conventions'
+}
+
+// Set project information
+classifier.id = ''
+classifier.implVersion = project.projectVersion
+
+// Add necessary repositories
+repositories {
+    maven {
+        name 'Minecraft Libraries'
+        url 'https://libraries.minecraft.net'
+    }
+    maven {
+        name 'Ashwork'
+        url 'https://maven.ashwork.net'
+    }
+}
+
+// Grab dependencies
+dependencies {
+    // DataFixerUpper
+    api group: 'com.mojang', name: 'datafixerupper', version: project.dfuVersion
+    api group: 'net.ashwork', name: 'callability', version: project.callabilityVersion
+}
+
+// Set specific publication data
+publishing {
+    publications.create(archivesBaseName, MavenPublication) {
+        from components.java
+        pom {
+            name = project.projectName
+            description = "A collection of helpful codecs."
+        }
+    }
+}
