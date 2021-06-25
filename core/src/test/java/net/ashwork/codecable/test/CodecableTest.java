@@ -9,20 +9,31 @@
 
 package net.ashwork.codecable.test;
 
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.JsonOps;
+import com.mojang.serialization.MapCodec;
 import net.ashwork.codecable.Codecable;
+import net.ashwork.codecable.test.util.ComparisonUtil;
 import net.ashwork.codecable.test.util.GenerationUtil;
 import net.ashwork.codecable.test.util.TestUtil;
 import net.ashwork.functionality.callable.CallableFunction;
 import net.ashwork.functionality.callable.CallableIntFunction;
 import org.junit.jupiter.api.Test;
 
-import java.util.Arrays;
-import java.util.Set;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.reflect.Method;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
+import java.util.stream.Collectors;
 
 /**
  * All tests associated with {@link Codecable}.
@@ -71,6 +82,72 @@ public final class CodecableTest {
         TestUtil.codecCompressedJsonTest(prettyCodec, test, new JsonPrimitive(test.getTestId()));
         TestUtil.checkDecodeJsonTest(prettyCodec, new JsonPrimitive("illegal_value"), true);
         TestUtil.checkDecodeCompressedJsonTest(prettyCodec, new JsonPrimitive(-2), true);
+    }
+
+    /**
+     * Codec(s) Tested:
+     * <ul>
+     *     <li>{@link Codecable#iterator(Codec)}</li>
+     *     <li>{@link Codecable#enumeration(Codec)}</li>
+     * </ul>
+     */
+    @Test
+    public void iterations() {
+        List<Integer> ints = Lists.newArrayList(GenerationUtil.generateDynamicIntArray(20, 0, 1000));
+        JsonArray array = new JsonArray();
+        ints.forEach(array::add);
+
+        Codec<Iterator<Integer>> iterator = Codecable.wrap(Codec.INT).iteratorOf();
+        TestUtil.codecJsonTest(iterator, ints.iterator(), array, (exp, act) -> ComparisonUtil.areIteratorsEqual(ints.iterator(), act, Objects::equals));
+
+        Codec<Enumeration<Integer>> enumeration = Codecable.wrap(Codec.INT).enumerationOf();
+        TestUtil.codecJsonTest(enumeration, Iterators.asEnumeration(ints.iterator()), array, (exp, act) -> ComparisonUtil.areEnumerationsEqual(Iterators.asEnumeration(ints.iterator()), act, Objects::equals));
+    }
+
+    /**
+     * Codec(s) Tested:
+     * <ul>
+     *     <li>{@link Codecable#keyListMapCodec(MapCodec, MapCodec)}</li>
+     *     <li>{@link Codecable#listMapCodec(MapCodec, MapCodec)}</li>
+     * </ul>
+     */
+    @Test
+    public void listMaps() throws Throwable {
+        Map<Integer, Integer> ints = GenerationUtil.generateDynamicIntSet(50, 0, 1000).stream().collect(Collectors.toMap(Function.identity(), i -> GenerationUtil.generateInt(0, 3)));
+        Method deepCopyMethod = JsonArray.class.getDeclaredMethod("deepCopy");
+        deepCopyMethod.setAccessible(true);
+        MethodHandle deepCopy = MethodHandles.lookup().unreflect(deepCopyMethod);
+
+        Codec<Map<Integer, Integer>> keyList = Codecable.keyListMapCodec(Codec.INT.listOf().fieldOf("keys"), Codec.INT.fieldOf("value"));
+        JsonArray keyListArray = new JsonArray();
+        Map<Integer, JsonArray> inverse = new HashMap<>();
+        ints.forEach((key, value) -> inverse.computeIfAbsent(value, v -> new JsonArray()).add(key));
+        inverse.forEach((i, array) -> {
+            JsonObject obj = new JsonObject();
+            obj.addProperty("value", i);
+            obj.add("keys", array);
+            keyListArray.add(obj);
+        });
+        TestUtil.codecJsonTest(keyList, ints, keyListArray);
+
+        JsonArray keyListDuplicates = (JsonArray) deepCopy.invokeExact(keyListArray);
+        JsonArray randomKeyListValue = ((JsonArray) ((JsonObject) GenerationUtil.selectRandom(keyListDuplicates)).get("keys"));
+        randomKeyListValue.add(GenerationUtil.selectRandom(randomKeyListValue));
+        TestUtil.checkDecodeJsonTest(keyList, keyListDuplicates, true);
+
+        Codec<Map<Integer, Integer>> list = Codecable.listMapCodec(Codec.INT.fieldOf("key"), Codec.INT.fieldOf("value"));
+        JsonArray listArray = new JsonArray();
+        ints.forEach((key, value) -> {
+            JsonObject obj = new JsonObject();
+            obj.addProperty("value", value);
+            obj.addProperty("key", key);
+            listArray.add(obj);
+        });
+        TestUtil.codecJsonTest(list, ints, listArray);
+
+        JsonArray listDuplicates = (JsonArray) deepCopy.invokeExact(keyListArray);
+        listDuplicates.add(GenerationUtil.selectRandom(listDuplicates));
+        TestUtil.checkDecodeJsonTest(list, listDuplicates, true);
     }
 
     private enum TestEnum {

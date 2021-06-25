@@ -5,7 +5,7 @@ plugins {
 
 // Set project information
 classifier.id = ''
-classifier.implVersion = project.projectVersion
+classifier.version = project.codecableVersion
 
 // Add necessary repositories
 repositories {

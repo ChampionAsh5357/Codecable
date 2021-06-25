@@ -7,7 +7,7 @@ plugins {
 
 // Set project information
 classifier.id = project.projectMinecraft
-classifier.implVersion = project.projectVersion
+classifier.version = project.codecableMinecraftVersion
 
 // Set minecraft data
 minecraft {

@@ -10,12 +10,17 @@
 package net.ashwork.codecable;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterators;
+import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.MapCodec;
 import net.ashwork.functionality.callable.CallableFunction;
 import net.ashwork.functionality.callable.CallableIntFunction;
 
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
@@ -36,6 +41,44 @@ public interface Codecable<A> extends Codec<A> {
      */
     static <E> Codecable<E> wrap(final Codec<E> codec) {
         return new CodecableWrapper<>(codec);
+    }
+
+    /**
+     * Constructs an iterator codec from the supplied element codec.
+     *
+     * @param elementCodec The codec for the elements
+     * @param <E> The type of the elements in the iterator
+     * @return An iterator codec
+     */
+    static <E> Codecable<Iterator<E>> iterator(final Codec<E> elementCodec) {
+        return wrap(elementCodec.listOf().xmap(List::iterator, ImmutableList::copyOf));
+    }
+
+    /**
+     * @return Creates an iterator of the given codec
+     * @see Codecable#iterator(Codec)
+     */
+    default Codecable<Iterator<A>> iteratorOf() {
+        return iterator(this);
+    }
+
+    /**
+     * Constructs an enumeration codec from the supplied element codec.
+     *
+     * @param elementCodec The codec for the elements
+     * @param <E> The type of the elements in the iterator
+     * @return An enumeration codec
+     */
+    static <E> Codecable<Enumeration<E>> enumeration(final Codec<E> elementCodec) {
+        return wrap(iterator(elementCodec).xmap(Iterators::asEnumeration, Enumeration::asIterator));
+    }
+
+    /**
+     * @return Creates an enumeration of the given codec
+     * @see Codecable#enumeration(Codec)
+     */
+    default Codecable<Enumeration<A>> enumerationOf() {
+        return enumeration(this);
     }
 
     /**
@@ -112,5 +155,70 @@ public interface Codecable<A> extends Codec<A> {
      */
     static <E extends Enum<E>> Codecable<E> enumCodec(final Class<E> enumClass, final CallableFunction<? super String, ? extends E> fromString, final Function<? super E, ? extends String> toString, final CallableIntFunction<E> fromInt, final ToIntFunction<E> toInt) {
         return new EnumCodec<>(enumClass, fromString, toString, fromInt, toInt);
+    }
+
+    /**
+     * A codec that encodes a map into a list of pairs containing a list of keys related to a particular value.
+     *
+     * @param keyListCodec The codec that represents the list of keys related to a particular value in the map
+     * @param valueCodec The codec that represents the value within the map
+     * @param <K> The type of the keys maintained by this map
+     * @param <V> The type of the values in the map
+     * @return A codec which encodes a map into pairs of a list of keys and a value
+     */
+    static <K, V> Codecable<Map<K, V>> keyListMapCodec(final MapCodec<List<K>> keyListCodec, final MapCodec<V> valueCodec) {
+        return wrap(Codec.mapPair(keyListCodec, valueCodec).codec().listOf().comapFlatMap(list -> {
+            Map<K, V> success = new HashMap<>(), duplicates = new HashMap<>();
+            list.forEach(pair -> pair.getFirst().forEach(key -> {
+                if (success.putIfAbsent(key, pair.getSecond()) != null)
+                    duplicates.putIfAbsent(key, pair.getSecond());
+            }));
+            return createMapResult(success, duplicates);
+        }, map -> {
+            Map<V, ImmutableList.Builder<K>> inverse = new HashMap<>();
+            map.forEach((key, value) -> inverse.computeIfAbsent(value, v -> ImmutableList.builder()).add(key));
+            return inverse.entrySet().stream().map(entry -> Pair.of((List<K>) entry.getValue().build(), entry.getKey())).toList();
+        }));
+    }
+
+    /**
+     * A codec that encodes a map into a list of pairs containing a key and its value.
+     *
+     * @param keyCodec The codec that represents the keys maintained by the map
+     * @param valueCodec The codec that represents the value within the map
+     * @param <K> The type of the keys maintained by this map
+     * @param <V> The type of the values in the map
+     * @return A codec which encodes a map into pairs of a key and a value
+     */
+    static <K, V> Codecable<Map<K, V>> listMapCodec(final MapCodec<K> keyCodec, final MapCodec<V> valueCodec) {
+        return wrap(Codec.mapPair(keyCodec, valueCodec).codec().listOf().comapFlatMap(list -> {
+            Map<K, V> success = new HashMap<>(), duplicates = new HashMap<>();
+            list.forEach(pair -> {
+                if (success.putIfAbsent(pair.getFirst(), pair.getSecond()) != null)
+                    duplicates.putIfAbsent(pair.getFirst(), pair.getSecond());
+            });
+            return createMapResult(success, duplicates);
+        }, map -> map.entrySet().stream().map(entry -> Pair.of(entry.getKey(), entry.getValue())).toList()));
+    }
+
+    /**
+     * Creates a data result based on the successful and failed entries within the map.
+     * If there are any duplicates entries, the result will error, otherwise, it will succeed.
+     *
+     * @param success A map of all the entries that are read
+     * @param duplicates A map of all the entries that are duplicates
+     * @param <K> The type of the keys maintained by this map
+     * @param <V> The type of the values in the map
+     * @return A {@link DataResult} that holds the result of the map and an error message if any
+     *         duplicates were present.
+     */
+    private static <K, V> DataResult<Map<K, V>> createMapResult(final Map<K, V> success, final Map<K, V> duplicates) {
+        ImmutableMap<K, V> result = ImmutableMap.copyOf(success);
+        return duplicates.isEmpty()
+                ? DataResult.success(result)
+                : DataResult.error("Duplicate keys were found in the map: ["
+                + duplicates.entrySet().stream().reduce("",
+                (prefix, entry) -> (prefix.isEmpty() ? "" : prefix + ", ") + entry.getKey() + " -> " + entry.getValue(),
+                (first, second) -> (first.isEmpty() ? "" : first + ", ") + second) + "]", result);
     }
 }

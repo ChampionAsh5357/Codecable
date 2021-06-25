@@ -9,8 +9,10 @@
 
 package net.ashwork.codecable.test.util;
 
-import java.util.List;
-import java.util.Objects;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
+
+import java.util.*;
 import java.util.function.BiPredicate;
 import java.util.stream.IntStream;
 
@@ -36,5 +38,35 @@ public final class ComparisonUtil {
                 equalsTest.test(thisObject.get(i), thatObject.get(i)
                 )
         );
+    }
+
+    /**
+     * Checks whether two iterators are equivalent.
+     *
+     * @param thisObject The first iterator
+     * @param thatObject The second iterator
+     * @param equalsTest An equality test for the objects within the iterator
+     * @param <T> The type of the elements within the iterator
+     * @return If the two iterators are equal
+     */
+    public static <T> boolean areIteratorsEqual(Iterator<T> thisObject, Iterator<T> thatObject, BiPredicate<T, T> equalsTest) {
+        if (Objects.equals(thisObject, thatObject)) return true;
+        if (thisObject == null || thatObject == null) return false;
+        return areListsEqual(Lists.newArrayList(thisObject), Lists.newArrayList(thatObject), equalsTest);
+    }
+
+    /**
+     * Checks whether two enumerations are equivalent.
+     *
+     * @param thisObject The first enumeration
+     * @param thatObject The second enumeration
+     * @param equalsTest An equality test for the objects within the enumeration
+     * @param <T> The type of the elements within the enumeration
+     * @return If the two enumerations are equal
+     */
+    public static <T> boolean areEnumerationsEqual(Enumeration<T> thisObject, Enumeration<T> thatObject, BiPredicate<T, T> equalsTest) {
+        if (Objects.equals(thisObject, thatObject)) return true;
+        if (thisObject == null || thatObject == null) return false;
+        return areListsEqual(Collections.list(thisObject), Collections.list(thatObject), equalsTest);
     }
 }
