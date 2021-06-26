@@ -12,11 +12,9 @@ package net.ashwork.codecable.test;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.mojang.serialization.Codec;
-import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.MapCodec;
 import net.ashwork.codecable.Codecable;
 import net.ashwork.codecable.test.util.ComparisonUtil;
@@ -28,7 +26,6 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.util.*;
 import java.util.function.Function;
@@ -93,7 +90,7 @@ public final class CodecableTest {
      */
     @Test
     public void iterations() {
-        List<Integer> ints = Lists.newArrayList(GenerationUtil.generateDynamicIntArray(20, 0, 1000));
+        List<Integer> ints = Lists.newArrayList(Arrays.stream(GenerationUtil.generateDynamicIntArray(20, 0, 1000)).boxed().toArray(Integer[]::new));
         JsonArray array = new JsonArray();
         ints.forEach(array::add);
 
@@ -150,6 +147,9 @@ public final class CodecableTest {
         TestUtil.checkDecodeJsonTest(list, listDuplicates, true);
     }
 
+    /**
+     * A test enum for use with this class.
+     */
     private enum TestEnum {
         TEST1("test_one", 4),
         TEST2("test_two", 10),
@@ -164,14 +164,26 @@ public final class CodecableTest {
             this.id = id;
         }
 
+        /**
+         * @return Gets the name associated with the enum entry
+         */
         public String getTestName() {
             return this.name;
         }
 
+        /**
+         * @return Gets the id associated with the enum entry
+         */
         public int getTestId() {
             return this.id;
         }
 
+        /**
+         * Grabs the enum using the name or null if not present.
+         *
+         * @param name The name within the enum
+         * @return The {@link TestEnum} or null
+         */
         public static TestEnum byName(final String name) {
             return Arrays.stream(TestEnum.values())
                     .filter(e -> e.getTestName().equalsIgnoreCase(name))
@@ -179,6 +191,13 @@ public final class CodecableTest {
                     .orElse(null);
         }
 
+        /**
+         * Grabs the enum using the id or throws an exception if not present.
+         *
+         * @param id The id within the enum
+         * @return The {@link TestEnum}
+         * @throws RuntimeException If the enum does not exist
+         */
         public static TestEnum byId(final int id) {
             return Arrays.stream(TestEnum.values())
                     .filter(e -> e.getTestId() == id)

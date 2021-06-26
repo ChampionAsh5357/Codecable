@@ -102,7 +102,7 @@ public final class GenerationUtil {
      *                                  zero or negative.
      * @see #generateIntArray(int, int, int)
      */
-    public static Integer[] generateDynamicIntArray(final int maxSize, final int min, final int max) {
+    public static int[] generateDynamicIntArray(final int maxSize, final int min, final int max) {
         if (maxSize <= 0) throw new IllegalArgumentException("Cannot have a negative or zero sized array.");
         return generateIntArray(generateInt(1, maxSize + 1), min, max);
     }
@@ -118,13 +118,27 @@ public final class GenerationUtil {
      *                                  or negative, or if the difference
      *                                  between the maximum and minimum is
      *                                  zero or negative.
-     * @see #generateInt(int, int)
      */
-    public static Integer[] generateIntArray(final int size, final int min, final int max) {
+    public static int[] generateIntArray(final int size, final int min, final int max) {
         if (size <= 0) throw new IllegalArgumentException("Cannot have a negative or zero sized array.");
-        Integer[] arr = new Integer[size];
-        for (int i = 0; i < arr.length; i++) arr[i] = generateInt(min, max);
-        return arr;
+        return RANDOM.ints(size, min, max).toArray();
+    }
+
+    /**
+     * Generates an array with random longs.
+     *
+     * @param size The array size
+     * @param min The minimum value within the array (inclusive)
+     * @param max The maximum value within the array (exclusive)
+     * @return The generated array
+     * @throws IllegalArgumentException If the {@code maxSize} is a zero
+     *                                  or negative, or if the difference
+     *                                  between the maximum and minimum is
+     *                                  zero or negative.
+     */
+    public static long[] generateLongArray(final long size, final long min, final long max) {
+        if (size <= 0) throw new IllegalArgumentException("Cannot have a negative or zero sized array.");
+        return RANDOM.longs(size, min, max).toArray();
     }
 
     /**

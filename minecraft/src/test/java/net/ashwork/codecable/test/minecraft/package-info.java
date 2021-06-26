@@ -9,7 +9,7 @@
 
 @MethodsReturnNonnullByDefault
 @ParametersAreNonnullByDefault
-package net.ashwork.codecable.minecraft.codec;
+package net.ashwork.codecable.test.minecraft;
 
 import net.minecraft.MethodsReturnNonnullByDefault;
 

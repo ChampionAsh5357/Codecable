@@ -16,7 +16,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.world.level.BlockEventData;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.ItemLike;
 
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 /**
@@ -47,7 +49,7 @@ public final class LevelCodecs {
     public static final Codec<ChunkPos> COMPRESSED_CHUNK_POS = Codec.LONG.xmap(ChunkPos::new, ChunkPos::toLong);
 
     /**
-     * A {@link BlockEventData} codec.
+     * A {@link BlockEventData} codec. Uses the standard block position codec.
      */
     public static final Codec<BlockEventData> BLOCK_EVENT_DATA = RecordCodecBuilder.create(instance ->
             instance.group(

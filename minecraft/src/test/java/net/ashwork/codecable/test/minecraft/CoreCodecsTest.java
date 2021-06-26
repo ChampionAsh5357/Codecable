@@ -20,6 +20,8 @@ import net.ashwork.codecable.test.util.TestUtil;
 import net.minecraft.core.*;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
+
 /**
  * All tests associated with {@link CoreCodecs}.
  */
@@ -123,10 +125,10 @@ public final class CoreCodecsTest {
     public void nonNullList() {
         int defaultValue = 5;
         Codec<NonNullList<Integer>> listCodec = CoreCodecs.nonNullList(Integer.class, Codec.INT, defaultValue);
-        Integer[] values = GenerationUtil.generateDynamicIntArray(10, 0, 30);
+        int[] values = GenerationUtil.generateDynamicIntArray(10, 0, 30);
 
         // Test dynamically sized list
-        NonNullList<Integer> ints = NonNullList.of(defaultValue, values);
+        NonNullList<Integer> ints = NonNullList.of(defaultValue, Arrays.stream(values).boxed().toArray(Integer[]::new));
         JsonArray intsOutput = new JsonArray();
         ints.forEach(intsOutput::add);
         TestUtil.codecJsonTest(listCodec, ints, intsOutput);

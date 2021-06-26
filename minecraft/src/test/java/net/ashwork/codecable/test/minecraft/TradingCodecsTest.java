@@ -51,7 +51,7 @@ public class TradingCodecsTest {
     @Test
     public void merchantOffer() {
         List<Item> items = GenerationUtil.generateList(3, Registry.ITEM.stream().toList());
-        Integer[] sizes = GenerationUtil.generateIntArray(3, 1, 65);
+        int[] sizes = GenerationUtil.generateIntArray(3, 1, 65);
         ItemStack[] stacks = IntStream.range(0, 3).mapToObj(i -> new ItemStack(items.get(i), sizes[i])).toArray(ItemStack[]::new);
         String[] names = new String[]{"buy", "buyB", "sell"};
         MerchantOffer offer = new MerchantOffer(stacks[0], stacks[1], stacks[2], GenerationUtil.generateInt(1, 100), GenerationUtil.generateInt(1, 100), GenerationUtil.generateInt(1, 1000), GenerationUtil.generateFloat(0.1F, 2.0F), GenerationUtil.generateInt(1, 100));
