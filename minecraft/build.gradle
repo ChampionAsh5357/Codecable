@@ -1,6 +1,7 @@
 // Setup plugins
 plugins {
     id 'library-conventions'
+    id 'license-manager'
     id 'org.spongepowered.gradle.vanilla' version 'latest.release'
     id 'com.github.johnrengelman.shadow' version 'latest.release'
 }

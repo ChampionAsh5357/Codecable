@@ -1,6 +1,7 @@
 // Setup Library
 plugins {
     id 'library-conventions'
+    id 'license-manager'
 }
 
 // Set project information

@@ -7,3 +7,8 @@ plugins {
 repositories {
     gradlePluginPortal()
 }
+
+// Add external plugins
+dependencies {
+    implementation group: 'gradle.plugin.org.cadixdev.gradle', name: 'licenser', version: 'latest.release'
+}
