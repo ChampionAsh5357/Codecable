@@ -16,9 +16,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.world.level.BlockEventData;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.ItemLike;
 
-import java.util.function.Function;
 import java.util.stream.IntStream;
 
 /**

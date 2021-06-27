@@ -9,12 +9,12 @@
 
 package net.ashwork.codecable.test;
 
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
+import com.google.common.collect.*;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.MapCodec;
 import net.ashwork.codecable.Codecable;
 import net.ashwork.codecable.test.util.ComparisonUtil;
@@ -31,6 +31,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * All tests associated with {@link Codecable}.
@@ -145,6 +146,31 @@ public final class CodecableTest {
         JsonArray listDuplicates = (JsonArray) deepCopy.invokeExact(keyListArray);
         listDuplicates.add(GenerationUtil.selectRandom(listDuplicates));
         TestUtil.checkDecodeJsonTest(list, listDuplicates, true);
+    }
+
+    /**
+     * Codec(s) Tested:
+     * <ul>
+     *     <li>{@link Codecable#unboundedBiMapCodec(Codec, Codec)}</li>
+     *     <li>{@link Codecable#biMapCodec(Codec)}</li>
+     * </ul>
+     */
+    @Test
+    public void biMap() throws Throwable {
+        Codec<BiMap<String, Integer>> codec = Codecable.unboundedBiMapCodec(Codec.STRING, Codec.INT);
+        Method deepCopyMethod = JsonObject.class.getDeclaredMethod("deepCopy");
+        deepCopyMethod.setAccessible(true);
+        MethodHandle deepCopy = MethodHandles.lookup().unreflect(deepCopyMethod);
+        int size = GenerationUtil.generateInt(1, 100);
+        int[] keys = GenerationUtil.generateUniqueIntArray(size + 1, 0, 100000),
+              values = GenerationUtil.generateUniqueIntArray(size + 1, 0, 100000);
+        JsonObject mapJson = new JsonObject();
+        BiMap<String, Integer> biMap = IntStream.range(0, size).peek(i -> mapJson.addProperty(String.valueOf(keys[i]), values[i])).boxed().collect(ImmutableBiMap.toImmutableBiMap(i -> String.valueOf(keys[i]), i -> values[i]));
+        TestUtil.codecJsonTest(codec, biMap, mapJson);
+
+        JsonObject valueDuplicateJson = (JsonObject) deepCopy.invokeExact(mapJson);
+        valueDuplicateJson.addProperty(String.valueOf(keys[size]), values[0]);
+        TestUtil.checkDecodeJsonTest(codec, valueDuplicateJson, true);
     }
 
     /**

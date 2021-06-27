@@ -9,7 +9,6 @@
 
 package net.ashwork.codecable.test.util;
 
-import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 
 import java.util.*;

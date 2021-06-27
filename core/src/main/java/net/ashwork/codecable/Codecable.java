@@ -9,10 +9,7 @@
 
 package net.ashwork.codecable;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Iterators;
+import com.google.common.collect.*;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
@@ -158,7 +155,8 @@ public interface Codecable<A> extends Codec<A> {
     }
 
     /**
-     * A codec that encodes a map into a list of pairs containing a list of keys related to a particular value.
+     * Constructs a codec that encodes a map into a list of pairs containing
+     * a list of keys related to a particular value.
      *
      * @param keyListCodec The codec that represents the list of keys related to a particular value in the map
      * @param valueCodec The codec that represents the value within the map
@@ -182,7 +180,8 @@ public interface Codecable<A> extends Codec<A> {
     }
 
     /**
-     * A codec that encodes a map into a list of pairs containing a key and its value.
+     * Constructs a codec that encodes a map into a list of pairs containing
+     * a key and its value.
      *
      * @param keyCodec The codec that represents the keys maintained by the map
      * @param valueCodec The codec that represents the value within the map
@@ -202,6 +201,40 @@ public interface Codecable<A> extends Codec<A> {
     }
 
     /**
+     * Constructs a bi map codec from a given key codec and value codec within
+     * the map respectively.
+     *
+     * @param keyCodec The codec that represents the keys maintained by the map
+     * @param valueCodec The codec that represents the value within the map
+     * @param <K> The type of the keys maintained by this map
+     * @param <V> The type of the values in the map
+     * @return A {@link BiMap} codec for the given key and value codecs
+     */
+    static <K, V> Codecable<BiMap<K, V>> unboundedBiMapCodec(final Codec<K> keyCodec, final Codec<V> valueCodec) {
+        return biMapCodec(Codec.unboundedMap(keyCodec, valueCodec));
+    }
+
+    /**
+     * Constructs a bi map codec from a given map codec.
+     *
+     * @param mapCodec The codec that encodes and decodes the map
+     * @param <K> The type of the keys maintained by this map
+     * @param <V> The type of the values in the map
+     * @return A {@link BiMap} codec for the given map codec
+     */
+    static <K, V> Codecable<BiMap<K, V>> biMapCodec(final Codec<Map<K, V>> mapCodec) {
+        return wrap(mapCodec.comapFlatMap(map -> {
+            BiMap<K, V> success = HashBiMap.create();
+            HashMap<K, V> duplicates = new HashMap<>();
+            map.forEach((key, value) -> {
+                if (success.containsValue(value)) duplicates.put(key, value);
+                else success.put(key, value);
+            });
+            return createMapResult(success, duplicates).map(ImmutableBiMap::copyOf);
+        }, Function.identity()));
+    }
+
+    /**
      * Creates a data result based on the successful and failed entries within the map.
      * If there are any duplicates entries, the result will error, otherwise, it will succeed.
      *
@@ -216,7 +249,7 @@ public interface Codecable<A> extends Codec<A> {
         ImmutableMap<K, V> result = ImmutableMap.copyOf(success);
         return duplicates.isEmpty()
                 ? DataResult.success(result)
-                : DataResult.error("Duplicate keys were found in the map: ["
+                : DataResult.error("Duplicates were found in the map: ["
                 + duplicates.entrySet().stream().reduce("",
                 (prefix, entry) -> (prefix.isEmpty() ? "" : prefix + ", ") + entry.getKey() + " -> " + entry.getValue(),
                 (first, second) -> (first.isEmpty() ? "" : first + ", ") + second) + "]", result);

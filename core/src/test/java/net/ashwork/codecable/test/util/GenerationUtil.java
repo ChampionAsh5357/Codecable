@@ -125,6 +125,23 @@ public final class GenerationUtil {
     }
 
     /**
+     * Generates an array with unique random integers.
+     *
+     * @param size The array size
+     * @param min The minimum value within the array (inclusive)
+     * @param max The maximum value within the array (exclusive)
+     * @return The generated array
+     * @throws IllegalArgumentException If the {@code maxSize} is a zero
+     *                                  or negative, or if the difference
+     *                                  between the maximum and minimum is
+     *                                  zero or negative.
+     */
+    public static int[] generateUniqueIntArray(final int size, final int min, final int max) {
+        if (size <= 0) throw new IllegalArgumentException("Cannot have a negative or zero sized array.");
+        return RANDOM.ints(size, min, max).distinct().toArray();
+    }
+
+    /**
      * Generates an array with random longs.
      *
      * @param size The array size
