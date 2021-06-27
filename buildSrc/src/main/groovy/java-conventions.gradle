@@ -11,7 +11,7 @@ abstract class ClassifierExtension {
 }
 
 // Set project information
-group = project.userGroup
+group = project.generalGroup
 def extension = project.extensions.create('classifier', ClassifierExtension)
 afterEvaluate {
     if (!extension.artifactName.isPresent())
@@ -22,10 +22,10 @@ afterEvaluate {
     jar {
         manifest.attributes([
                 'Specification-Title': project.projectName,
-                'Specification-Vendor': project.userName,
+                'Specification-Vendor': project.generalAuthor,
                 'Specification-Version': project.version,
                 'Implementation-Title': project.projectName,
-                'Implementation-Vendor': project.userName,
+                'Implementation-Vendor': project.generalAuthor,
                 'Implementation-Version': project.version,
                 'Implementation-Timestamp': new Date().format('yyyy-MM-dd\'T\'HH:mm:ssZ')
         ])

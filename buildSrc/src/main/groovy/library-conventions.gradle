@@ -3,6 +3,7 @@ plugins {
     id 'java-conventions'
     id 'java-library'
     id 'maven-publish'
+    id 'signing'
 }
 
 // Set global publication data
@@ -12,16 +13,19 @@ publishing {
             artifactId = archivesBaseName
         }
         pom {
-            def baseUrl = "$project.generalGithub$project.projectBaseName"
+            def baseUrl = "$project.generalGithub/$project.projectBaseName"
             url = "https://$baseUrl"
-            organization {
-                name = project.generalAuthor
-                url = project.generalWebsite
+            developers {
+                developer {
+                    name = project.generalAuthor
+                    email = project.generalEmail
+                    url = project.generalWebsite
+                }
             }
             scm {
                 url = "https://$baseUrl"
                 connection = "scm:git:git://${baseUrl}.git"
-                developerConnection = "scm:git:git@${baseUrl}.git"
+                developerConnection = "scm:git:ssh://git@${baseUrl}.git"
             }
             issueManagement {
                 system = 'Github Issues'
@@ -40,4 +44,9 @@ publishing {
             }
         }
     }
+}
+
+// Sign all artifacts
+signing {
+    sign publishing.publications.withType(MavenPublication)
 }

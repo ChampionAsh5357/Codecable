@@ -13,7 +13,7 @@ afterEvaluate {
                             ? project.projectName
                             : "${classifier.artifactName.get().capitalize()} ($project.projectName)")
             year = Calendar.getInstance().get(Calendar.YEAR)
-            author = project.userName
+            author = project.generalAuthor
         }
         include '**/*.java'
     }
