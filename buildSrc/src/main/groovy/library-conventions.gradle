@@ -40,7 +40,16 @@ publishing {
         }
         repositories {
             maven {
+                name 'Builds'
                 url project.repoLocal
+            }
+            maven {
+                name 'Sonatype'
+                url 'https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/'
+                credentials {
+                    username project.sonatypeUsername
+                    password project.sonatypePassword
+                }
             }
         }
     }
