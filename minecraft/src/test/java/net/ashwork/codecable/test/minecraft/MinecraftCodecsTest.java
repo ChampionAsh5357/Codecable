@@ -67,8 +67,8 @@ public final class MinecraftCodecsTest {
                 Ingredient.of(GenerationUtil.selectRandom(Registry.ITEM.stream().toList())),
                 new ItemStack(GenerationUtil.selectRandom(Registry.ITEM.stream().toList()),
                         GenerationUtil.generateInt(1, 65)
-                ));
-        //TODO: Abstract TestUtil#codecTest to support this use-case
+                )
+        );
         JsonObject element = new JsonObject();
         element.addProperty("group", testRecipe.getGroup());
         element.add("ingredient", testRecipe.getIngredients().get(0).toJson());

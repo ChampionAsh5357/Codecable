@@ -34,9 +34,7 @@ public final class ComparisonUtil {
         if (thisObject == null || thatObject == null) return false;
         return thisObject.size() == thatObject.size()
                 && IntStream.range(0, thisObject.size()).allMatch(i ->
-                equalsTest.test(thisObject.get(i), thatObject.get(i)
-                )
-        );
+                equalsTest.test(thisObject.get(i), thatObject.get(i)));
     }
 
     /**
