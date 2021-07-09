@@ -43,6 +43,16 @@ java {
     }
 }
 
+// Add javadoc tags
+javadoc {
+    options.encoding = 'UTF-8'
+    options.tags = [
+            'apiNote:a:API Note:',
+            'implSpec:a:Implementation Requirements:',
+            'implNote:a:Implementation Note:'
+    ]
+}
+
 // Add maven central to grab dependencies
 repositories {
     mavenCentral()
